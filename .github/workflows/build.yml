@@ -1,0 +1,38 @@
+name: PicoZstd build
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ integration/picocompress-codec ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout PicoZstd
+        uses: actions/checkout@v4
+        with:
+          path: picozstd
+      - name: Checkout PicoCompress ABI
+        uses: actions/checkout@v4
+        with:
+          repository: WillEastbury/picocompress
+          path: picocompress
+      - name: Configure
+        shell: bash
+        run: >-
+          cmake -S picozstd -B build
+          -DBUILD_TESTING=ON
+          -DPICOZSTD_BUILD_PICOCOMPRESS_CODEC=ON
+          -DPICOCOMPRESS_INCLUDE_DIR="$GITHUB_WORKSPACE/picocompress/include"
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
