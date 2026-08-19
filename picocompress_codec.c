@@ -32,10 +32,10 @@ typedef struct pcx_zstd_state {
     uint8_t failed;
 } pcx_zstd_state;
 
-typedef struct pcx_zstd_requirements {
+typedef struct pcx_zstd_frame_requirements {
     size_t header_size;
     uint64_t window_size;
-} pcx_zstd_requirements;
+} pcx_zstd_frame_requirements;
 
 static uint32_t pcx_zstd_read_le32(const uint8_t *p)
 {
@@ -172,8 +172,8 @@ static pcx_result pcx_zstd_header_size(const uint8_t *data, size_t size,
     return PCX_OK;
 }
 
-static pcx_result pcx_zstd_requirements(const uint8_t *data, size_t size,
-                                        pcx_zstd_requirements *requirements)
+static pcx_result pcx_zstd_parse_requirements(const uint8_t *data, size_t size,
+                                              pcx_zstd_frame_requirements *requirements)
 {
     uint8_t descriptor;
     unsigned fcs_flag;
@@ -263,14 +263,14 @@ static int pcx_zstd_write_bridge(void *opaque, const uint8_t *data, size_t size)
 
 static pcx_result pcx_zstd_start_frame(pcx_zstd_state *state)
 {
-    pcx_zstd_requirements requirements;
+    pcx_zstd_frame_requirements requirements;
     picozstd_config config;
     size_t consumed = 0;
     picozstd_status status;
     pcx_result result;
 
-    result = pcx_zstd_requirements(state->header, state->header_size,
-                                   &requirements);
+    result = pcx_zstd_parse_requirements(state->header, state->header_size,
+                                         &requirements);
     if (result != PCX_OK) return result;
     result = pcx_zstd_ensure_workspace(state, requirements.window_size);
     if (result != PCX_OK) return result;
